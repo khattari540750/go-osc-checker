@@ -149,18 +149,30 @@ func getDefaultConfig() *AppConfig {
 
 // createSenderSection 単一の送信セクションを作成
 func createSenderSection(target SenderTarget, index int, updateHistory func(string)) *widget.Card {
-	// OSC送信用のUI要素
+	// OSC送信用のUI要素（固定サイズコンテナでラップ）
 	hostEntry := widget.NewEntry()
 	hostEntry.SetText(target.Host)
 	hostEntry.SetPlaceHolder("送信先IP")
+	hostEntry.Resize(fyne.NewSize(120, 32))
+	hostContainer := container.NewWithoutLayout(hostEntry)
+	hostContainer.Resize(fyne.NewSize(120, 32))
+	hostEntry.Move(fyne.NewPos(0, 0))
 
 	portEntry := widget.NewEntry()
 	portEntry.SetText(fmt.Sprintf("%d", target.Port))
-	portEntry.SetPlaceHolder("送信先ポート")
+	portEntry.SetPlaceHolder("ポート")
+	portEntry.Resize(fyne.NewSize(80, 32))
+	portContainer := container.NewWithoutLayout(portEntry)
+	portContainer.Resize(fyne.NewSize(80, 32))
+	portEntry.Move(fyne.NewPos(0, 0))
 
 	addressEntry := widget.NewEntry()
 	addressEntry.SetText(target.Address)
-	addressEntry.SetPlaceHolder("OSCアドレス (例: /test/sample)")
+	addressEntry.SetPlaceHolder("OSCアドレス")
+	addressEntry.Resize(fyne.NewSize(200, 32))
+	addressContainer := container.NewWithoutLayout(addressEntry)
+	addressContainer.Resize(fyne.NewSize(200, 32))
+	addressEntry.Move(fyne.NewPos(0, 0))
 
 	// 設定ファイルから引数の初期値を読み込み
 	var arguments []OSCArgument
@@ -314,19 +326,65 @@ func createSenderSection(target SenderTarget, index int, updateHistory func(stri
 
 	// セクションのレイアウト
 	sectionContent := container.NewVBox(
-		// 送信先設定
-		container.NewHBox(
-			widget.NewLabel("送信先:"),
-			hostEntry,
-			widget.NewLabel(":"),
-			portEntry,
-		),
+		// 送信先設定とアドレス - 固定位置レイアウト
+		func() *fyne.Container {
+			// 位置計算用の定数
+			const (
+				ipLabelWidth    = 30  // "IP:" の幅
+				hostFieldWidth  = 120 // IPフィールドの幅
+				portLabelWidth  = 50  // "Port:" の幅
+				portFieldWidth  = 80  // Portフィールドの幅
+				addrLabelWidth  = 80  // "OSC Addr:" の幅
+				addrFieldWidth  = 200 // OSC Addrフィールドの幅
+				spacing         = 5   // 要素間のスペース
+			)
 
-		// OSCアドレス
-		container.NewHBox(
-			widget.NewLabel("アドレス:"),
-			addressEntry,
-		),
+			// ラベルを作成
+			ipLabel := widget.NewLabel("IP:")
+			portLabel := widget.NewLabel("Port:")
+			addrLabel := widget.NewLabel("OSC Addr:")
+
+			// WithoutLayoutコンテナを作成
+			layoutContainer := container.NewWithoutLayout()
+			layoutContainer.Resize(fyne.NewSize(600, 32))
+
+			// 各要素の位置を計算して配置
+			xPos := float32(0)
+
+			// IP: ラベル
+			ipLabel.Move(fyne.NewPos(xPos, 0))
+			ipLabel.Resize(fyne.NewSize(ipLabelWidth, 32))
+			layoutContainer.Add(ipLabel)
+			xPos += ipLabelWidth + spacing
+
+			// IPフィールド
+			hostContainer.Move(fyne.NewPos(xPos, 0))
+			layoutContainer.Add(hostContainer)
+			xPos += hostFieldWidth + spacing
+
+			// Port: ラベル
+			portLabel.Move(fyne.NewPos(xPos, 0))
+			portLabel.Resize(fyne.NewSize(portLabelWidth, 32))
+			layoutContainer.Add(portLabel)
+			xPos += portLabelWidth + spacing
+
+			// Portフィールド
+			portContainer.Move(fyne.NewPos(xPos, 0))
+			layoutContainer.Add(portContainer)
+			xPos += portFieldWidth + spacing
+
+			// OSC Addr: ラベル
+			addrLabel.Move(fyne.NewPos(xPos, 0))
+			addrLabel.Resize(fyne.NewSize(addrLabelWidth, 32))
+			layoutContainer.Add(addrLabel)
+			xPos += addrLabelWidth + spacing
+
+			// OSC Addrフィールド
+			addressContainer.Move(fyne.NewPos(xPos, 0))
+			layoutContainer.Add(addressContainer)
+
+			return layoutContainer
+		}(),
 
 		widget.NewSeparator(),
 
@@ -406,7 +464,7 @@ func main() {
 
 	// メインレイアウト
 	senderContent := container.NewBorder(
-		widget.NewCard("OSC Sender", "複数送信先対応（引数プリセット機能付き）", nil), // top
+		widget.NewCard("OSC Sender", "", nil), // top
 		container.NewVBox(
 			widget.NewSeparator(),
 			widget.NewLabel("送信履歴:"),
