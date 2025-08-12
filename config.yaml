@@ -4,9 +4,15 @@ app:
   version: "1.0.0"
 
 sender:
-  default_host: "127.0.0.1"
-  default_port: 7000
-  default_address: "/test"
+  list:
+    - name: "Local Test"
+      host: "127.0.0.1"
+      port: 7000
+      address: "/test"
+    - name: "Remote Device"
+      host: "192.168.1.100"
+      port: 9000
+      address: "/1/fader1"
   window:
     width: 900
     height: 600

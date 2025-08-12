@@ -38,12 +38,18 @@ type WindowSettings struct {
 	Title  string `yaml:"title"`
 }
 
+// SenderTarget 送信先設定
+type SenderTarget struct {
+	Name    string `yaml:"name"`
+	Host    string `yaml:"host"`
+	Port    int    `yaml:"port"`
+	Address string `yaml:"address"`
+}
+
 // SenderSettings 送信側設定
 type SenderSettings struct {
-	DefaultHost    string         `yaml:"default_host"`
-	DefaultPort    int            `yaml:"default_port"`
-	DefaultAddress string         `yaml:"default_address"`
-	Window         WindowSettings `yaml:"window"`
+	List   []SenderTarget `yaml:"list"`
+	Window WindowSettings `yaml:"window"`
 }
 
 // ReceiverSettings 受信側設定
@@ -100,20 +106,25 @@ func getDefaultConfig() *AppConfig {
 			Version: "1.0.0",
 		},
 		Sender: SenderSettings{
-			DefaultHost:    "127.0.0.1",
-			DefaultPort:    7000,
-			DefaultAddress: "/test",
+			List: []SenderTarget{
+				{
+					Name:    "Default",
+					Host:    "127.0.0.1",
+					Port:    7000,
+					Address: "/test",
+				},
+			},
 			Window: WindowSettings{
-				Width:  400,
-				Height: 350,
+				Width:  900,
+				Height: 600,
 				Title:  "OSC Sender",
 			},
 		},
 		Receiver: ReceiverSettings{
 			DefaultPort: 7000,
 			Window: WindowSettings{
-				Width:  500,
-				Height: 600,
+				Width:  1000,
+				Height: 700,
 				Title:  "OSC Receiver",
 			},
 			MaxLogEntries: 100,
@@ -121,52 +132,37 @@ func getDefaultConfig() *AppConfig {
 	}
 }
 
-func main() {
-	// 設定ファイルを読み込み
-	config, err := LoadConfig("config.yaml")
-	if err != nil {
-		log.Fatalf("設定ファイルの読み込みに失敗しました: %v", err)
-	}
-
-	a := app.NewWithID("com.example.oscchecker")
-
-	// メッセージ管理用のスライス
-	var messages []OSCMessage
-	var messageCounter int
-
-	// Senderウィンドウ
-	senderWin := a.NewWindow(config.Sender.Window.Title)
-
+// createSenderSection 単一の送信セクションを作成
+func createSenderSection(target SenderTarget, index int, updateHistory func(string)) *widget.Card {
 	// OSC送信用のUI要素
 	hostEntry := widget.NewEntry()
-	hostEntry.SetText(config.Sender.DefaultHost)
+	hostEntry.SetText(target.Host)
 	hostEntry.SetPlaceHolder("送信先IP")
 
 	portEntry := widget.NewEntry()
-	portEntry.SetText(fmt.Sprintf("%d", config.Sender.DefaultPort))
+	portEntry.SetText(fmt.Sprintf("%d", target.Port))
 	portEntry.SetPlaceHolder("送信先ポート")
 
 	addressEntry := widget.NewEntry()
-	addressEntry.SetText(config.Sender.DefaultAddress)
+	addressEntry.SetText(target.Address)
 	addressEntry.SetPlaceHolder("OSCアドレス (例: /test/sample)")
 
 	// 引数管理用のスライス
 	var arguments []OSCArgument
-
-	// 引数リスト表示用
 	argumentsContainer := container.NewVBox()
 
-	// 引数を追加する関数（関数宣言を先に）
+	// 引数表示を更新する関数
 	var updateArgumentsDisplay func()
-
 	updateArgumentsDisplay = func() {
 		argumentsContainer.RemoveAll()
-		for i, arg := range arguments {
-			argIndex := i // クロージャ用
+		for j, arg := range arguments {
+			argIndex := j // クロージャ用
 
 			// 引数タイプ選択
 			typeSelect := widget.NewSelect([]string{"int", "float", "string", "bool"}, func(value string) {
-				arguments[argIndex].Type = value
+				if argIndex < len(arguments) {
+					arguments[argIndex].Type = value
+				}
 			})
 			typeSelect.SetSelected(arg.Type)
 
@@ -174,17 +170,21 @@ func main() {
 			valueEntry := widget.NewEntry()
 			valueEntry.SetText(arg.Value)
 			valueEntry.OnChanged = func(value string) {
-				arguments[argIndex].Value = value
+				if argIndex < len(arguments) {
+					arguments[argIndex].Value = value
+				}
 			}
 
 			// 削除ボタン
 			removeBtn := widget.NewButton("削除", func() {
-				arguments = append(arguments[:argIndex], arguments[argIndex+1:]...)
-				updateArgumentsDisplay()
+				if argIndex < len(arguments) {
+					arguments = append(arguments[:argIndex], arguments[argIndex+1:]...)
+					updateArgumentsDisplay()
+				}
 			})
 
 			argRow := container.NewHBox(
-				widget.NewLabel(fmt.Sprintf("引数%d:", i+1)),
+				widget.NewLabel(fmt.Sprintf("引数%d:", j+1)),
 				typeSelect,
 				valueEntry,
 				removeBtn,
@@ -207,14 +207,14 @@ func main() {
 		address := addressEntry.Text
 
 		if host == "" || portStr == "" || address == "" {
-			log.Println("送信エラー: ホスト、ポート、アドレスを入力してください")
+			log.Printf("送信エラー [%s]: ホスト、ポート、アドレスを入力してください", target.Name)
 			return
 		}
 
 		// ポート番号をパース
 		port, err := strconv.Atoi(portStr)
 		if err != nil {
-			log.Printf("ポート番号が無効です: %s", portStr)
+			log.Printf("ポート番号が無効です [%s]: %s", target.Name, portStr)
 			return
 		}
 
@@ -231,14 +231,14 @@ func main() {
 				if val, err := strconv.Atoi(arg.Value); err == nil {
 					msg.Append(int32(val))
 				} else {
-					log.Printf("int変換エラー: %s", arg.Value)
+					log.Printf("int変換エラー [%s]: %s", target.Name, arg.Value)
 					return
 				}
 			case "float":
 				if val, err := strconv.ParseFloat(arg.Value, 32); err == nil {
 					msg.Append(float32(val))
 				} else {
-					log.Printf("float変換エラー: %s", arg.Value)
+					log.Printf("float変換エラー [%s]: %s", target.Name, arg.Value)
 					return
 				}
 			case "string":
@@ -247,7 +247,7 @@ func main() {
 				if val, err := strconv.ParseBool(arg.Value); err == nil {
 					msg.Append(val)
 				} else {
-					log.Printf("bool変換エラー: %s", arg.Value)
+					log.Printf("bool変換エラー [%s]: %s", target.Name, arg.Value)
 					return
 				}
 			}
@@ -256,7 +256,7 @@ func main() {
 		// OSCメッセージを送信
 		err = client.Send(msg)
 		if err != nil {
-			log.Printf("OSC送信エラー: %v", err)
+			log.Printf("OSC送信エラー [%s]: %v", target.Name, err)
 			return
 		}
 
@@ -266,18 +266,17 @@ func main() {
 			argInfo = append(argInfo, fmt.Sprintf("%s:%s", arg.Type, arg.Value))
 		}
 
-		log.Printf("OSC送信完了: %s:%d %s [%s]", host, port, address, strings.Join(argInfo, ", "))
+		logMsg := fmt.Sprintf("OSC送信完了 [%s]: %s:%d %s [%s]", target.Name, host, port, address, strings.Join(argInfo, ", "))
+		log.Printf(logMsg)
+		
+		// 送信履歴を更新
+		timestamp := time.Now().Format("15:04:05")
+		historyMsg := fmt.Sprintf("%s | %s → %s:%d %s [%s]", timestamp, target.Name, host, port, address, strings.Join(argInfo, ", "))
+		updateHistory(historyMsg)
 	})
 
-	// 送信履歴（簡易版）
-	historyLabel := widget.NewLabel("送信履歴がここに表示されます")
-	historyScroll := container.NewScroll(historyLabel)
-	historyScroll.SetMinSize(fyne.NewSize(0, 100))
-
-	// レイアウト構成
-	topSection := container.NewVBox(
-		widget.NewCard("OSC Sender", "送信設定", nil),
-
+	// セクションのレイアウト
+	sectionContent := container.NewVBox(
 		// 送信先設定
 		container.NewHBox(
 			widget.NewLabel("送信先:"),
@@ -308,18 +307,77 @@ func main() {
 		container.NewHBox(
 			sendBtn,
 		),
-
-		widget.NewSeparator(),
-		widget.NewLabel("送信履歴:"),
 	)
 
-	// メイン画面
+	return widget.NewCard(
+		fmt.Sprintf("送信先 %d: %s", index+1, target.Name),
+		"",
+		sectionContent,
+	)
+}
+
+func main() {
+	// 設定ファイルを読み込み
+	config, err := LoadConfig("config.yaml")
+	if err != nil {
+		log.Fatalf("設定ファイルの読み込みに失敗しました: %v", err)
+	}
+
+	a := app.NewWithID("com.example.oscchecker")
+
+	// メッセージ管理用のスライス
+	var messages []OSCMessage
+	
+	// 送信履歴管理用のスライス
+	var sendHistory []string
+
+	// Senderウィンドウ
+	senderWin := a.NewWindow(config.Sender.Window.Title)
+
+	// 送信履歴（簡易版）
+	historyLabel := widget.NewLabel("送信履歴がここに表示されます")
+	historyScroll := container.NewScroll(historyLabel)
+	historyScroll.SetMinSize(fyne.NewSize(0, 150))
+
+	// 送信履歴を更新する関数
+	updateSendHistory := func(msg string) {
+		sendHistory = append([]string{msg}, sendHistory...)
+		if len(sendHistory) > 50 { // 最大50件まで保持
+			sendHistory = sendHistory[:50]
+		}
+		
+		historyText := strings.Join(sendHistory, "\n")
+		if historyText == "" {
+			historyText = "送信履歴がここに表示されます"
+		}
+		historyLabel.SetText(historyText)
+	}
+
+	// 複数送信セクションを格納するコンテナ
+	sendersContainer := container.NewVBox()
+
+	// 各送信先に対してUIセクションを作成
+	for i, target := range config.Sender.List {
+		sectionCard := createSenderSection(target, i, updateSendHistory)
+		sendersContainer.Add(sectionCard)
+		
+		// 最後以外はセパレータを追加
+		if i < len(config.Sender.List)-1 {
+			sendersContainer.Add(widget.NewSeparator())
+		}
+	}
+
+	// メインレイアウト
 	senderContent := container.NewBorder(
-		topSection,    // top
-		nil,           // bottom
-		nil,           // left
-		nil,           // right
-		historyScroll, // center
+		widget.NewCard("OSC Sender", "複数送信先対応", nil), // top
+		container.NewVBox(
+			widget.NewSeparator(),
+			widget.NewLabel("送信履歴:"),
+			historyScroll,
+		), // bottom
+		nil, // left
+		nil, // right
+		container.NewScroll(sendersContainer), // center - スクロール可能
 	)
 
 	senderWin.SetContent(senderContent)
@@ -333,7 +391,7 @@ func main() {
 	receiverPortEntry := widget.NewEntry()
 	receiverPortEntry.SetText(fmt.Sprintf("%d", config.Receiver.DefaultPort))
 	receiverPortEntry.SetPlaceHolder("Port Number")
-	receiverPortEntry.Resize(fyne.NewSize(80, 32)) // 5桁のポート番号に適したサイズ
+	receiverPortEntry.Resize(fyne.NewSize(80, 32))
 
 	statusLabel := widget.NewLabel("Stopped")
 	statusLabel.Importance = widget.MediumImportance
@@ -342,29 +400,27 @@ func main() {
 	filterEntry := widget.NewEntry()
 	filterEntry.SetPlaceHolder("Address Filter (e.g. /test*, /osc/*, empty=all)")
 
-	// メッセージログ用のリスト（簡略化版）
+	// メッセージログ用のリスト
 	logContent := widget.NewLabel("Message log will be displayed here")
 	logScroll := container.NewScroll(logContent)
 
 	// 受信メッセージカウンタ
 	messageCountLabel := widget.NewLabel("Received: 0")
 
-	// OSC受信のモック関数（後でOSCライブラリに置き換え）
+	// ログコンテンツを更新する関数
 	updateLogContent := func() {
 		var logText string
 		filter := filterEntry.Text
 
 		for _, msg := range messages {
-			// フィルター機能：空の場合は全て表示、そうでなければマッチするもののみ
+			// フィルター機能
 			shouldShow := false
 			if filter == "" {
 				shouldShow = true
 			} else if strings.HasSuffix(filter, "*") {
-				// ワイルドカード処理（例：/test* は /test で始まるアドレスにマッチ）
 				prefix := strings.TrimSuffix(filter, "*")
 				shouldShow = strings.HasPrefix(msg.Address, prefix)
 			} else {
-				// 完全一致または部分一致
 				shouldShow = strings.Contains(msg.Address, filter)
 			}
 
@@ -383,6 +439,7 @@ func main() {
 		updateLogContent()
 	}
 
+	// メッセージ追加関数
 	addMessage := func(address, values string) {
 		timestamp := time.Now().Format("15:04:05")
 		newMsg := OSCMessage{
@@ -396,21 +453,20 @@ func main() {
 			messages = messages[:config.Receiver.MaxLogEntries]
 		}
 
-		messageCounter++
 		messageCountLabel.SetText(fmt.Sprintf("Received: %d", len(messages)))
 		updateLogContent()
 	}
 
-	// 変数を先に宣言
+	// 受信制御用の変数
 	var startStopBtn *widget.Button
 	var oscServer *osc.Server
 	var isReceiving bool
 
+	// Start/Stopボタン
 	startStopBtn = widget.NewButton("Start", func() {
 		if !isReceiving {
-			// スタート時にログをクリア（クリアボタンと同じ挙動）
+			// スタート時にログをクリア
 			messages = []OSCMessage{}
-			messageCounter = 0
 			messageCountLabel.SetText("Received: 0")
 			updateLogContent()
 
@@ -464,7 +520,6 @@ func main() {
 		} else {
 			// OSC受信停止
 			if oscServer != nil {
-				// go-oscには明示的な停止メソッドがないため、サーバーを破棄
 				oscServer = nil
 			}
 			startStopBtn.SetText("Start")
@@ -476,20 +531,18 @@ func main() {
 		statusLabel.Refresh()
 	})
 
-	// 開始ボタンを目立つサイズに設定
 	startStopBtn.Resize(fyne.NewSize(150, 50))
 
+	// クリアボタン
 	clearBtn := widget.NewButton("Clear", func() {
 		messages = []OSCMessage{}
-		messageCounter = 0
 		messageCountLabel.SetText("Received: 0")
 		updateLogContent()
 	})
 
-	// レイアウト構成
+	// Receiverレイアウト構成
 	receiverTopSection := container.NewVBox(
 		widget.NewCard("OSC Receiver", "", nil),
-
 		widget.NewSeparator(),
 
 		// Connection Settings
@@ -504,7 +557,7 @@ func main() {
 
 		widget.NewSeparator(),
 
-		// Start Button with Status (left-aligned, prominent)
+		// Start Button with Status
 		container.NewHBox(
 			startStopBtn,
 			widget.NewSeparator(),
@@ -534,8 +587,8 @@ func main() {
 		),
 	)
 
-	// メイン画面
-	content := container.NewBorder(
+	// Receiverメイン画面
+	receiverContent := container.NewBorder(
 		receiverTopSection, // top
 		nil,                // bottom
 		nil,                // left
@@ -543,7 +596,7 @@ func main() {
 		logScroll,          // center
 	)
 
-	receiverWin.SetContent(content)
+	receiverWin.SetContent(receiverContent)
 	receiverWin.Resize(fyne.NewSize(float32(config.Receiver.Window.Width), float32(config.Receiver.Window.Height)))
 	receiverWin.Show()
 
