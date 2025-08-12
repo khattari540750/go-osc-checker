@@ -9,10 +9,27 @@ sender:
       host: "127.0.0.1"
       port: 7000
       address: "/test"
+      arguments:
+        - type: "int"
+          default_value: "42"
+          description: "Test integer value"
+        - type: "float"
+          default_value: "3.14"
+          description: "Test float value"
+        - type: "string"
+          default_value: "hello"
+          description: "Test string value"
     - name: "Remote Device"
       host: "192.168.1.100"
       port: 9000
       address: "/1/fader1"
+      arguments:
+        - type: "float"
+          default_value: "0.5"
+          description: "Fader value (0.0-1.0)"
+        - type: "bool"
+          default_value: "true"
+          description: "Enable flag"
   window:
     width: 900
     height: 600

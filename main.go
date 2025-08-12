@@ -38,12 +38,20 @@ type WindowSettings struct {
 	Title  string `yaml:"title"`
 }
 
+// SenderArgument 送信側の引数定義
+type SenderArgument struct {
+	Type         string `yaml:"type"`
+	DefaultValue string `yaml:"default_value"`
+	Description  string `yaml:"description"`
+}
+
 // SenderTarget 送信先設定
 type SenderTarget struct {
-	Name    string `yaml:"name"`
-	Host    string `yaml:"host"`
-	Port    int    `yaml:"port"`
-	Address string `yaml:"address"`
+	Name      string           `yaml:"name"`
+	Host      string           `yaml:"host"`
+	Port      int              `yaml:"port"`
+	Address   string           `yaml:"address"`
+	Arguments []SenderArgument `yaml:"arguments"`
 }
 
 // SenderSettings 送信側設定
@@ -112,6 +120,13 @@ func getDefaultConfig() *AppConfig {
 					Host:    "127.0.0.1",
 					Port:    7000,
 					Address: "/test",
+					Arguments: []SenderArgument{
+						{
+							Type:         "int",
+							DefaultValue: "42",
+							Description:  "Test integer",
+						},
+					},
 				},
 			},
 			Window: WindowSettings{
@@ -147,8 +162,15 @@ func createSenderSection(target SenderTarget, index int, updateHistory func(stri
 	addressEntry.SetText(target.Address)
 	addressEntry.SetPlaceHolder("OSCアドレス (例: /test/sample)")
 
-	// 引数管理用のスライス
+	// 設定ファイルから引数の初期値を読み込み
 	var arguments []OSCArgument
+	for _, argDef := range target.Arguments {
+		arguments = append(arguments, OSCArgument{
+			Type:  argDef.Type,
+			Value: argDef.DefaultValue,
+		})
+	}
+
 	argumentsContainer := container.NewVBox()
 
 	// 引数表示を更新する関数
@@ -157,6 +179,12 @@ func createSenderSection(target SenderTarget, index int, updateHistory func(stri
 		argumentsContainer.RemoveAll()
 		for j, arg := range arguments {
 			argIndex := j // クロージャ用
+
+			// 引数の説明を取得
+			description := ""
+			if argIndex < len(target.Arguments) {
+				description = target.Arguments[argIndex].Description
+			}
 
 			// 引数タイプ選択
 			typeSelect := widget.NewSelect([]string{"int", "float", "string", "bool"}, func(value string) {
@@ -183,8 +211,14 @@ func createSenderSection(target SenderTarget, index int, updateHistory func(stri
 				}
 			})
 
+			// 引数行の構成
+			labelText := fmt.Sprintf("引数%d:", j+1)
+			if description != "" {
+				labelText += fmt.Sprintf(" (%s)", description)
+			}
+
 			argRow := container.NewHBox(
-				widget.NewLabel(fmt.Sprintf("引数%d:", j+1)),
+				widget.NewLabel(labelText),
 				typeSelect,
 				valueEntry,
 				removeBtn,
@@ -193,6 +227,9 @@ func createSenderSection(target SenderTarget, index int, updateHistory func(stri
 		}
 		argumentsContainer.Refresh()
 	}
+
+	// 初期表示
+	updateArgumentsDisplay()
 
 	// 引数追加ボタン
 	addArgBtn := widget.NewButton("引数追加", func() {
@@ -369,7 +406,7 @@ func main() {
 
 	// メインレイアウト
 	senderContent := container.NewBorder(
-		widget.NewCard("OSC Sender", "複数送信先対応", nil), // top
+		widget.NewCard("OSC Sender", "複数送信先対応（引数プリセット機能付き）", nil), // top
 		container.NewVBox(
 			widget.NewSeparator(),
 			widget.NewLabel("送信履歴:"),
