@@ -12,6 +12,7 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 	"gopkg.in/yaml.v3"
 	"github.com/hypebeast/go-osc/osc"
@@ -331,28 +332,55 @@ func main() {
 	// OSC受信用のUI要素
 	receiverPortEntry := widget.NewEntry()
 	receiverPortEntry.SetText(fmt.Sprintf("%d", config.Receiver.DefaultPort))
-	receiverPortEntry.SetPlaceHolder("受信ポート")
+	receiverPortEntry.SetPlaceHolder("Port Number")
+	receiverPortEntry.Resize(fyne.NewSize(80, 32))  // 5桁のポート番号に適したサイズ
 	
-	statusLabel := widget.NewLabel("停止中")
+	statusLabel := widget.NewLabel("Stopped")
 	statusLabel.Importance = widget.MediumImportance
 	
+	// Address Filter Entry
+	filterEntry := widget.NewEntry()
+	filterEntry.SetPlaceHolder("Address Filter (e.g. /test*, /osc/*, empty=all)")
+	
 	// メッセージログ用のリスト（簡略化版）
-	logContent := widget.NewLabel("受信ログがここに表示されます")
+	logContent := widget.NewLabel("Message log will be displayed here")
 	logScroll := container.NewScroll(logContent)
 	
 	// 受信メッセージカウンタ
-	messageCountLabel := widget.NewLabel("受信メッセージ: 0")
+	messageCountLabel := widget.NewLabel("Received: 0")
 	
 	// OSC受信のモック関数（後でOSCライブラリに置き換え）
 	updateLogContent := func() {
 		var logText string
+		filter := filterEntry.Text
+		
 		for _, msg := range messages {
-			logText += fmt.Sprintf("%s | %s | %s\n", msg.Timestamp, msg.Address, msg.Values)
+			// フィルター機能：空の場合は全て表示、そうでなければマッチするもののみ
+			shouldShow := false
+			if filter == "" {
+				shouldShow = true
+			} else if strings.HasSuffix(filter, "*") {
+				// ワイルドカード処理（例：/test* は /test で始まるアドレスにマッチ）
+				prefix := strings.TrimSuffix(filter, "*")
+				shouldShow = strings.HasPrefix(msg.Address, prefix)
+			} else {
+				// 完全一致または部分一致
+				shouldShow = strings.Contains(msg.Address, filter)
+			}
+			
+			if shouldShow {
+				logText += fmt.Sprintf("%s | %s | %s\n", msg.Timestamp, msg.Address, msg.Values)
+			}
 		}
 		if logText == "" {
-			logText = "受信ログがここに表示されます"
+			logText = "Message log will be displayed here"
 		}
 		logContent.SetText(logText)
+	}
+	
+	// フィルター入力が変更されたらリアルタイムで表示を更新
+	filterEntry.OnChanged = func(content string) {
+		updateLogContent()
 	}
 	
 	addMessage := func(address, values string) {
@@ -369,22 +397,23 @@ func main() {
 		}
 		
 		messageCounter++
-		messageCountLabel.SetText(fmt.Sprintf("受信メッセージ: %d", messageCounter))
+				messageCountLabel.SetText(fmt.Sprintf("Received: %d", len(messages)))
 		updateLogContent()
 	}
-	
-	// テスト用ボタン（実際のOSC受信に置き換え予定）
-	testBtn := widget.NewButton("テストメッセージ", func() {
-		addMessage("/test/sample", "1.0, hello")
-	})
 	
 	// 変数を先に宣言
 	var startStopBtn *widget.Button
 	var oscServer *osc.Server
 	var isReceiving bool
 	
-	startStopBtn = widget.NewButton("開始", func() {
+	startStopBtn = widget.NewButton("Start", func() {
 		if !isReceiving {
+			// スタート時にログをクリア（クリアボタンと同じ挙動）
+			messages = []OSCMessage{}
+			messageCounter = 0
+			messageCountLabel.SetText("Received: 0")
+			updateLogContent()
+			
 			// OSC受信開始
 			port, err := strconv.Atoi(receiverPortEntry.Text)
 			if err != nil {
@@ -427,8 +456,8 @@ func main() {
 				}
 			}()
 			
-			startStopBtn.SetText("停止")
-			statusLabel.SetText("受信中...")
+			startStopBtn.SetText("Stop")
+			statusLabel.SetText("Receiving...")
 			statusLabel.Importance = widget.SuccessImportance
 			isReceiving = true
 			log.Printf("OSC受信を開始 (ポート: %d)", port)
@@ -438,8 +467,8 @@ func main() {
 				// go-oscには明示的な停止メソッドがないため、サーバーを破棄
 				oscServer = nil
 			}
-			startStopBtn.SetText("開始")
-			statusLabel.SetText("停止中")
+			startStopBtn.SetText("Start")
+			statusLabel.SetText("Stopped")
 			statusLabel.Importance = widget.MediumImportance
 			isReceiving = false
 			log.Println("OSC受信を停止")
@@ -447,32 +476,62 @@ func main() {
 		statusLabel.Refresh()
 	})
 	
-	clearBtn := widget.NewButton("クリア", func() {
+	// 開始ボタンを目立つサイズに設定
+	startStopBtn.Resize(fyne.NewSize(150, 50))
+	
+	clearBtn := widget.NewButton("Clear", func() {
 		messages = []OSCMessage{}
 		messageCounter = 0
-		messageCountLabel.SetText("受信メッセージ: 0")
+		messageCountLabel.SetText("Received: 0")
 		updateLogContent()
 	})
 	
 	// レイアウト構成
 	receiverTopSection := container.NewVBox(
-		widget.NewCard("OSC Receiver", "Protokol風UI", nil),
-		container.NewHBox(
-			widget.NewLabel("ポート:"),
-			receiverPortEntry,
-			startStopBtn,
+		widget.NewCard("OSC Receiver", "", nil),
+		
+		widget.NewSeparator(),
+		
+		// Connection Settings
+		container.NewVBox(
+			widget.NewLabelWithStyle("Connection Settings", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+			container.NewHBox(
+				widget.NewLabel("Port:"),
+				container.NewWithoutLayout(receiverPortEntry),
+				layout.NewSpacer(),
+			),
 		),
+		
+		widget.NewSeparator(),
+		
+		// Start Button with Status (left-aligned, prominent)
 		container.NewHBox(
-			statusLabel,
+			startStopBtn,
 			widget.NewSeparator(),
+			statusLabel,
+			layout.NewSpacer(),
+		),
+		
+		widget.NewSeparator(),
+		
+		// Address Filter
+		container.NewVBox(
+			widget.NewLabel("Address Filter:"),
+			filterEntry,
+		),
+		
+		container.NewHBox(
 			messageCountLabel,
 		),
-		container.NewHBox(
-			clearBtn,
-			testBtn, // テスト用
-		),
+		
 		widget.NewSeparator(),
-		widget.NewLabel("受信ログ:"),
+		
+		// Message Log Header with Clear Button
+		container.NewHBox(
+			widget.NewLabelWithStyle("Message Log", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+			clearBtn,
+			layout.NewSpacer(),
+		),
 	)
 	
 	// メイン画面

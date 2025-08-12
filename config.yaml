@@ -8,14 +8,14 @@ sender:
   default_port: 7000
   default_address: "/test"
   window:
-    width: 400
-    height: 350
+    width: 900
+    height: 600
     title: "OSC Sender"
 
 receiver:
   default_port: 7000
   window:
-    width: 400
-    height: 350
+    width: 1000
+    height: 700
     title: "OSC Receiver"
   max_log_entries: 100
