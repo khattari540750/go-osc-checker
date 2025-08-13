@@ -152,7 +152,7 @@ func createSenderSection(target SenderTarget, index int, updateHistory func(stri
 	// OSC送信用のUI要素（固定サイズコンテナでラップ）
 	hostEntry := widget.NewEntry()
 	hostEntry.SetText(target.Host)
-	hostEntry.SetPlaceHolder("送信先IP")
+	hostEntry.SetPlaceHolder("Host IP")
 	hostEntry.Resize(fyne.NewSize(120, 32))
 	hostContainer := container.NewWithoutLayout(hostEntry)
 	hostContainer.Resize(fyne.NewSize(120, 32))
@@ -160,7 +160,7 @@ func createSenderSection(target SenderTarget, index int, updateHistory func(stri
 
 	portEntry := widget.NewEntry()
 	portEntry.SetText(fmt.Sprintf("%d", target.Port))
-	portEntry.SetPlaceHolder("ポート")
+	portEntry.SetPlaceHolder("Port")
 	portEntry.Resize(fyne.NewSize(80, 32))
 	portContainer := container.NewWithoutLayout(portEntry)
 	portContainer.Resize(fyne.NewSize(80, 32))
@@ -168,7 +168,7 @@ func createSenderSection(target SenderTarget, index int, updateHistory func(stri
 
 	addressEntry := widget.NewEntry()
 	addressEntry.SetText(target.Address)
-	addressEntry.SetPlaceHolder("OSCアドレス")
+	addressEntry.SetPlaceHolder("OSC Address")
 	addressEntry.Resize(fyne.NewSize(200, 32))
 	addressContainer := container.NewWithoutLayout(addressEntry)
 	addressContainer.Resize(fyne.NewSize(200, 32))
@@ -216,7 +216,7 @@ func createSenderSection(target SenderTarget, index int, updateHistory func(stri
 			}
 
 			// 削除ボタン
-			removeBtn := widget.NewButton("削除", func() {
+			removeBtn := widget.NewButton("✕", func() {
 				if argIndex < len(arguments) {
 					arguments = append(arguments[:argIndex], arguments[argIndex+1:]...)
 					updateArgumentsDisplay()
@@ -224,7 +224,7 @@ func createSenderSection(target SenderTarget, index int, updateHistory func(stri
 			})
 
 			// 引数行の構成
-			labelText := fmt.Sprintf("引数%d:", j+1)
+			labelText := fmt.Sprintf("Arg%d:", j+1)
 			if description != "" {
 				labelText += fmt.Sprintf(" (%s)", description)
 			}
@@ -244,13 +244,13 @@ func createSenderSection(target SenderTarget, index int, updateHistory func(stri
 	updateArgumentsDisplay()
 
 	// 引数追加ボタン
-	addArgBtn := widget.NewButton("引数追加", func() {
+	addArgBtn := widget.NewButton("＋", func() {
 		arguments = append(arguments, OSCArgument{Type: "int", Value: "0"})
 		updateArgumentsDisplay()
 	})
 
 	// 送信ボタン
-	sendBtn := widget.NewButton("送信", func() {
+	sendBtn := widget.NewButton("Send", func() {
 		host := hostEntry.Text
 		portStr := portEntry.Text
 		address := addressEntry.Text
@@ -323,9 +323,25 @@ func createSenderSection(target SenderTarget, index int, updateHistory func(stri
 		historyMsg := fmt.Sprintf("%s | %s → %s:%d %s [%s]", timestamp, target.Name, host, port, address, strings.Join(argInfo, ", "))
 		updateHistory(historyMsg)
 	})
+	
+	// Sendボタンのサイズを大きく設定
+	sendBtn.Resize(fyne.NewSize(80, 40))
+	
+	// nameラベルを大きなフォントで作成
+	nameLabel := widget.NewRichTextFromMarkdown(fmt.Sprintf("## %s", target.Name))
+	nameLabel.Wrapping = fyne.TextWrapOff
 
 	// セクションのレイアウト
 	sectionContent := container.NewVBox(
+		// nameとSendボタンを横並び
+		container.NewHBox(
+			sendBtn,
+			nameLabel,
+			layout.NewSpacer(),
+		),
+		
+		widget.NewSeparator(),
+		
 		// 送信先設定とアドレス - 固定位置レイアウト
 		func() *fyne.Container {
 			// 位置計算用の定数
@@ -390,22 +406,14 @@ func createSenderSection(target SenderTarget, index int, updateHistory func(stri
 
 		// 引数設定
 		container.NewHBox(
-			widget.NewLabel("引数設定:"),
 			addArgBtn,
 		),
 
 		argumentsContainer,
-
-		widget.NewSeparator(),
-
-		// 送信ボタン
-		container.NewHBox(
-			sendBtn,
-		),
 	)
 
 	return widget.NewCard(
-		fmt.Sprintf("送信先 %d: %s", index+1, target.Name),
+		"",
 		"",
 		sectionContent,
 	)
@@ -430,7 +438,7 @@ func main() {
 	senderWin := a.NewWindow(config.Sender.Window.Title)
 
 	// 送信履歴（簡易版）
-	historyLabel := widget.NewLabel("送信履歴がここに表示されます")
+	historyLabel := widget.NewLabel("Send history will be displayed here")
 	historyScroll := container.NewScroll(historyLabel)
 	historyScroll.SetMinSize(fyne.NewSize(0, 150))
 
@@ -443,7 +451,7 @@ func main() {
 		
 		historyText := strings.Join(sendHistory, "\n")
 		if historyText == "" {
-			historyText = "送信履歴がここに表示されます"
+			historyText = "Send history will be displayed here"
 		}
 		historyLabel.SetText(historyText)
 	}
@@ -467,7 +475,7 @@ func main() {
 		widget.NewCard("OSC Sender", "", nil), // top
 		container.NewVBox(
 			widget.NewSeparator(),
-			widget.NewLabel("送信履歴:"),
+			widget.NewLabel("Send History:"),
 			historyScroll,
 		), // bottom
 		nil, // left
