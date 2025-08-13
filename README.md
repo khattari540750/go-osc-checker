@@ -1,15 +1,18 @@
 # OSC Checker
 
-A professional OSC (Open Sound Control) sender and receiver application built with Go and Fyne. This tool provides an easy way to test and debug OSC communication within local networks, featuring a clean Protokol-inspired user interface.
+A professional OSC (Open Sound Control) sender and receiver application built with Go and Fyne. This tool provides an easy way to test and debug OSC communication within local networks, featuring a clean modern user interface with support for multiple sender configurations.
 
 ## Features
 
 ### 🎛️ OSC Sender
-- **Target Configuration**: Set IP address and port for OSC destinations
+- **Multiple Targets**: Configure multiple OSC destinations from YAML config
+- **Target Configuration**: Set IP address and port for each OSC destination
 - **Custom OSC Addresses**: Send messages to any OSC address path
+- **Preset Arguments**: Pre-configured argument templates with descriptions
 - **Multiple Argument Types**: Support for int, float, string, and bool arguments
-- **Dynamic Arguments**: Add/remove arguments as needed
-- **Send History**: Track your sent messages
+- **Dynamic Arguments**: Add/remove arguments as needed with intuitive ＋/✕ buttons
+- **Send History**: Track your sent messages with timestamps
+- **Clean UI**: Large, accessible buttons and streamlined interface
 
 ### 📡 OSC Receiver
 - **Real-time Monitoring**: Live display of incoming OSC messages
@@ -55,22 +58,29 @@ When you run the application, two windows will open:
 
 ### OSC Sender Usage
 
-1. **Configure Target**:
-   - Enter the target IP address (default: 127.0.0.1)
-   - Set the target port (default: 7000)
+The sender interface shows multiple configured targets from your config.yaml file.
 
-2. **Set OSC Address**:
-   - Enter the OSC address path (e.g., `/test/sample`)
+1. **Select Target**:
+   - Each target shows its name (e.g., "TestServer", "LiveServer")
+   - IP, Port, and OSC Address fields are pre-configured but editable
+   - Large "Send" button is positioned next to the target name for easy access
 
-3. **Add Arguments** (optional):
-   - Click "Add Argument" to add parameters
-   - Select argument type: int, float, string, or bool
-   - Enter the value
-   - Remove arguments with the "Remove" button
+2. **Configure Message**:
+   - **IP**: Target IP address (default from config)
+   - **Port**: Target port number (default from config)  
+   - **OSC Addr**: OSC address path (default from config)
+
+3. **Manage Arguments**:
+   - Pre-configured arguments are loaded from config with defaults
+   - **Add**: Click the ＋ button to add new arguments
+   - **Remove**: Click the ✕ button to remove arguments
+   - **Types**: Select from int, float, string, or bool
+   - **Values**: Enter values directly in the fields
 
 4. **Send Message**:
-   - Click "Send" to transmit the OSC message
-   - Check the send history below
+   - Click the prominent "Send" button next to the target name
+   - Messages are sent immediately
+   - Check the send history at the bottom of the window
 
 ### OSC Receiver Usage
 
@@ -101,7 +111,7 @@ When you run the application, two windows will open:
 
 ## Configuration
 
-The application uses a `config.yaml` file for default settings:
+The application uses a `config.yaml` file for multiple sender targets and default settings:
 
 ```yaml
 app:
@@ -116,6 +126,26 @@ sender:
     width: 900
     height: 600
     title: "OSC Sender"
+  list:
+    - name: "TestServer"
+      host: "127.0.0.1"
+      port: 7000
+      address: "/test"
+      arguments:
+        - type: "int"
+          default_value: "1"
+          description: "Test value"
+        - type: "float"
+          default_value: "1.5"
+          description: "Volume level"
+    - name: "LiveServer"
+      host: "192.168.1.100"
+      port: 8000
+      address: "/live/trigger"
+      arguments:
+        - type: "string"
+          default_value: "trigger"
+          description: "Command"
 
 receiver:
   default_port: 7000
@@ -126,28 +156,38 @@ receiver:
   max_log_entries: 1000
 ```
 
+### Configuration Features
+- **Multiple Targets**: Define multiple sender configurations
+- **Preset Arguments**: Pre-configure arguments with default values and descriptions
+- **Flexible Setup**: Each target can have different hosts, ports, and addresses
+- **UI Customization**: Window sizes and titles are configurable
+
 ## Use Cases
 
 ### Development & Testing
-- **API Testing**: Test OSC-based applications and plugins
+- **Multi-Target Testing**: Test multiple OSC destinations simultaneously
+- **API Testing**: Test OSC-based applications and plugins with preset configurations
 - **Network Debugging**: Verify OSC message transmission across networks
 - **Protocol Validation**: Ensure correct OSC message formatting
 
 ### Live Performance
 - **Signal Monitoring**: Monitor OSC traffic in real-time during performances
+- **Multi-Device Control**: Send OSC messages to multiple devices/applications
 - **Connection Verification**: Verify connections between different software/hardware
 
-### Education
-- **OSC Learning**: Understand OSC protocol behavior
+### Education & Research
+- **OSC Learning**: Understand OSC protocol behavior with multiple examples
 - **Network Communication**: Learn about UDP-based communication protocols
+- **Configuration Management**: Learn YAML-based application configuration
 
 ## Technical Details
 
 - **Framework**: Fyne v2 (Cross-platform GUI)
 - **OSC Library**: github.com/hypebeast/go-osc
-- **Configuration**: YAML-based configuration
+- **Configuration**: YAML-based configuration with multiple sender support
 - **Platform Support**: Windows, macOS, Linux
 - **Language**: Go 1.19+
+- **UI Features**: Large buttons, intuitive symbols (＋/✕), streamlined layout
 
 ## Message Format
 
@@ -174,14 +214,26 @@ TIME     │ ADDRESS              │ VALUES
    - Check if the sender and receiver are using the same port
    - Verify firewall settings
    - Ensure the target IP address is correct
+   - Verify config.yaml has valid sender configurations
 
 2. **Port already in use**:
    - Change the receiver port number
    - Check if another application is using the port
+   - Try different ports for different sender targets
 
 3. **Messages not filtered correctly**:
    - Ensure correct filter syntax (use `*` for wildcards)
    - Check for typos in the filter input
+
+4. **Configuration issues**:
+   - Verify config.yaml syntax is correct
+   - Check that all required fields are present in sender list
+   - Ensure argument types are valid (int, float, string, bool)
+
+5. **UI not responding**:
+   - Check console output for error messages
+   - Verify all dependencies are installed
+   - Try rebuilding the application
 
 ## Contributing
 

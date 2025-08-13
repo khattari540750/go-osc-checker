@@ -316,17 +316,17 @@ func createSenderSection(target SenderTarget, index int, updateHistory func(stri
 		}
 
 		logMsg := fmt.Sprintf("OSC送信完了 [%s]: %s:%d %s [%s]", target.Name, host, port, address, strings.Join(argInfo, ", "))
-		log.Printf(logMsg)
-		
+		log.Printf("%s", logMsg)
+
 		// 送信履歴を更新
 		timestamp := time.Now().Format("15:04:05")
 		historyMsg := fmt.Sprintf("%s | %s → %s:%d %s [%s]", timestamp, target.Name, host, port, address, strings.Join(argInfo, ", "))
 		updateHistory(historyMsg)
 	})
-	
+
 	// Sendボタンのサイズを大きく設定
 	sendBtn.Resize(fyne.NewSize(80, 40))
-	
+
 	// nameラベルを大きなフォントで作成
 	nameLabel := widget.NewRichTextFromMarkdown(fmt.Sprintf("## %s", target.Name))
 	nameLabel.Wrapping = fyne.TextWrapOff
@@ -339,20 +339,20 @@ func createSenderSection(target SenderTarget, index int, updateHistory func(stri
 			nameLabel,
 			layout.NewSpacer(),
 		),
-		
+
 		widget.NewSeparator(),
-		
+
 		// 送信先設定とアドレス - 固定位置レイアウト
 		func() *fyne.Container {
 			// 位置計算用の定数
 			const (
-				ipLabelWidth    = 30  // "IP:" の幅
-				hostFieldWidth  = 120 // IPフィールドの幅
-				portLabelWidth  = 50  // "Port:" の幅
-				portFieldWidth  = 80  // Portフィールドの幅
-				addrLabelWidth  = 80  // "OSC Addr:" の幅
-				addrFieldWidth  = 200 // OSC Addrフィールドの幅
-				spacing         = 5   // 要素間のスペース
+				ipLabelWidth   = 30  // "IP:" の幅
+				hostFieldWidth = 120 // IPフィールドの幅
+				portLabelWidth = 50  // "Port:" の幅
+				portFieldWidth = 80  // Portフィールドの幅
+				addrLabelWidth = 80  // "OSC Addr:" の幅
+				addrFieldWidth = 200 // OSC Addrフィールドの幅
+				spacing        = 5   // 要素間のスペース
 			)
 
 			// ラベルを作成
@@ -430,7 +430,7 @@ func main() {
 
 	// メッセージ管理用のスライス
 	var messages []OSCMessage
-	
+
 	// 送信履歴管理用のスライス
 	var sendHistory []string
 
@@ -448,7 +448,7 @@ func main() {
 		if len(sendHistory) > 50 { // 最大50件まで保持
 			sendHistory = sendHistory[:50]
 		}
-		
+
 		historyText := strings.Join(sendHistory, "\n")
 		if historyText == "" {
 			historyText = "Send history will be displayed here"
@@ -463,7 +463,7 @@ func main() {
 	for i, target := range config.Sender.List {
 		sectionCard := createSenderSection(target, i, updateSendHistory)
 		sendersContainer.Add(sectionCard)
-		
+
 		// 最後以外はセパレータを追加
 		if i < len(config.Sender.List)-1 {
 			sendersContainer.Add(widget.NewSeparator())
@@ -478,8 +478,8 @@ func main() {
 			widget.NewLabel("Send History:"),
 			historyScroll,
 		), // bottom
-		nil, // left
-		nil, // right
+		nil,                                   // left
+		nil,                                   // right
 		container.NewScroll(sendersContainer), // center - スクロール可能
 	)
 
