@@ -91,7 +91,7 @@ func LoadSettings(filename string) (*Settings, error) {
 	// ファイルが存在しない場合はデフォルト設定を作成
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		log.Printf("設定ファイル %s が見つかりません。デフォルト設定を使用します。", filename)
-		return &Settings{ConfigFile: "config.yaml"}, nil
+		return &Settings{ConfigFile: "settings/config.yaml"}, nil
 	}
 
 	// ファイルを読み込み
@@ -463,7 +463,7 @@ func createSenderSection(target SenderTarget, index int, updateHistory func(stri
 
 func main() {
 	// settings.yamlを読み込み
-	settings, err := LoadSettings("settings.yaml")
+	settings, err := LoadSettings("settings/settings.yaml")
 	if err != nil {
 		log.Fatalf("settings.yamlの読み込みに失敗しました: %v", err)
 	}

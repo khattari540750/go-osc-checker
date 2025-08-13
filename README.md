@@ -49,23 +49,23 @@ go build -o go-osc-checker main.go
 ./go-osc-checker
 ```
 
-**Note**: The application will automatically create default configuration files (`settings.yaml` and `config.yaml`) if they don't exist on first run.
+**Note**: The application will automatically create default configuration files in the `settings/` directory (`settings/settings.yaml` and `settings/config.yaml`) if they don't exist on first run.
 
 ## Configuration
 
-OSC Checker uses a hierarchical configuration system for flexible environment management.
+OSC Checker uses a hierarchical configuration system for flexible environment management. All configuration files are located in the `settings/` directory.
 
 ### Configuration Files
 
-#### 📄 settings.yaml
+#### 📄 settings/settings.yaml
 The main settings file that specifies which configuration file to use:
 
 ```yaml
 # OSC Checker Settings
-config_file: "config.yaml"  # Specify the config file to use
+config_file: "settings/config.yaml"  # Specify the config file to use
 ```
 
-#### 📄 config.yaml (Main Configuration)
+#### 📄 settings/config.yaml (Main Configuration)
 Contains all application settings including sender targets, window sizes, and receiver settings:
 
 ```yaml
@@ -104,14 +104,14 @@ You can create multiple configuration files for different environments:
 - `config-testing.yaml` - Testing environment
 - `config-production.yaml` - Production environment
 
-**To switch environments**, simply modify `settings.yaml`:
+**To switch environments**, simply modify `settings/settings.yaml`:
 
 ```yaml
 # For development
-config_file: "config-development.yaml"
+config_file: "settings/config-development.yaml"
 
 # For production  
-config_file: "config-production.yaml"
+config_file: "settings/config-production.yaml"
 ```
 
 ### Configuration Parameters
@@ -213,8 +213,8 @@ The sender interface shows multiple configured targets from your config.yaml fil
 - **Framework**: Fyne v2 (Cross-platform GUI)
 - **OSC Library**: github.com/hypebeast/go-osc
 - **Configuration**: Hierarchical YAML-based configuration system
-  - `settings.yaml`: Meta-configuration for environment switching
-  - `config.yaml`: Main application configuration
+  - `settings/settings.yaml`: Meta-configuration for environment switching
+  - `settings/config.yaml`: Main application configuration
   - Support for multiple environment-specific config files
 - **Platform Support**: Windows, macOS, Linux
 - **Language**: Go 1.19+

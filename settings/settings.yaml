@@ -1,0 +1,9 @@
+# OSC Checker Settings
+# このファイルでconfigファイルのパスを指定します
+
+config_file: "settings/config.yaml"
+
+# 他の環境用の設定例（コメントアウト）
+# config_file: "settings/config-development.yaml"
+# config_file: "settings/config-production.yaml"
+# config_file: "settings/config-testing.yaml"
