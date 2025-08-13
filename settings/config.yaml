@@ -1,6 +1,6 @@
-# OSC Checker Configuration
+# Go OSC Checker Configuration
 app:
-  name: "OSC Checker"
+  name: "Go OSC Checker"
   version: "1.0.0"
 
 sender:

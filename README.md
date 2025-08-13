@@ -1,4 +1,4 @@
-# OSC Checker
+# Go OSC Checker
 
 A professional OSC (Open Sound Control) sender and receiver application built with Go and Fyne. This tool provides an easy way to test and debug OSC communication within local networks, featuring a clean modern user interface with support for multiple sender configurations.
 
@@ -33,15 +33,15 @@ A professional OSC (Open Sound Control) sender and receiver application built wi
 ## Installation
 
 ### Prerequisites
-- Go 1.19 or later
+- Go 1.21 or later
 - Git
 
 ### Build from Source
 ```bash
-git clone <repository-url>
+git clone https://github.com/khattari540750/go-osc-checker.git
 cd go-osc-checker
 go mod tidy
-go build -o go-osc-checker main.go
+go build -o go-osc-checker .
 ```
 
 ### Run
@@ -53,7 +53,7 @@ go build -o go-osc-checker main.go
 
 ## Configuration
 
-OSC Checker uses a hierarchical configuration system for flexible environment management. All configuration files are located in the `settings/` directory.
+Go OSC Checker uses a hierarchical configuration system for flexible environment management. All configuration files are located in the `settings/` directory.
 
 ### Configuration Files
 
@@ -61,7 +61,7 @@ OSC Checker uses a hierarchical configuration system for flexible environment ma
 The main settings file that specifies which configuration file to use:
 
 ```yaml
-# OSC Checker Settings
+# Go OSC Checker Settings
 config_file: "settings/config.yaml"  # Specify the config file to use
 ```
 
@@ -70,7 +70,7 @@ Contains all application settings including sender targets, window sizes, and re
 
 ```yaml
 app:
-  name: "OSC Checker"
+  name: "Go OSC Checker"
   version: "1.0.0"
 
 sender:
@@ -217,7 +217,7 @@ The sender interface shows multiple configured targets from your config.yaml fil
   - `settings/config.yaml`: Main application configuration
   - Support for multiple environment-specific config files
 - **Platform Support**: Windows, macOS, Linux
-- **Language**: Go 1.19+
+- **Language**: Go 1.21+
 - **UI Features**: 
   - Large buttons with intuitive symbols (＋/✕)
   - Streamlined layout with border-based positioning

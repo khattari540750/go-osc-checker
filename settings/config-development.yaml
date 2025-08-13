@@ -1,6 +1,6 @@
-# OSC Checker Configuration - Development
+# Go OSC Checker Configuration - Development
 app:
-  name: "OSC Checker (Dev)"
+  name: "Go OSC Checker (Dev)"
   version: "1.0.0-dev"
 
 sender:

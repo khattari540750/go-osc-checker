@@ -1,4 +1,4 @@
-# OSC Checker Settings
+# Go OSC Checker Settings
 # このファイルでconfigファイルのパスを指定します
 
 config_file: "settings/config.yaml"
