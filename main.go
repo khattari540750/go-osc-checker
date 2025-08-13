@@ -199,9 +199,11 @@ func createSenderSection(target SenderTarget, index int, updateHistory func(stri
 			}
 
 			// 引数タイプ選択
+			// argIndexをキャプチャしてクロージャ問題を回避
+			capturedIndex := argIndex
 			typeSelect := widget.NewSelect([]string{"int", "float", "string", "bool"}, func(value string) {
-				if argIndex < len(arguments) {
-					arguments[argIndex].Type = value
+				if capturedIndex < len(arguments) {
+					arguments[capturedIndex].Type = value
 				}
 			})
 			typeSelect.SetSelected(arg.Type)
@@ -209,16 +211,21 @@ func createSenderSection(target SenderTarget, index int, updateHistory func(stri
 			// 引数値入力
 			valueEntry := widget.NewEntry()
 			valueEntry.SetText(arg.Value)
+			valueEntry.Resize(fyne.NewSize(200, 32)) // 入力フォームの幅を200に設定
+
+			// argIndexをキャプチャしてクロージャ問題を回避
+			valueEntryIndex := argIndex
 			valueEntry.OnChanged = func(value string) {
-				if argIndex < len(arguments) {
-					arguments[argIndex].Value = value
+				if valueEntryIndex < len(arguments) {
+					arguments[valueEntryIndex].Value = value
 				}
 			}
 
 			// 削除ボタン
+			removeBtnIndex := argIndex
 			removeBtn := widget.NewButton("✕", func() {
-				if argIndex < len(arguments) {
-					arguments = append(arguments[:argIndex], arguments[argIndex+1:]...)
+				if removeBtnIndex < len(arguments) {
+					arguments = append(arguments[:removeBtnIndex], arguments[removeBtnIndex+1:]...)
 					updateArgumentsDisplay()
 				}
 			})
@@ -229,11 +236,16 @@ func createSenderSection(target SenderTarget, index int, updateHistory func(stri
 				labelText += fmt.Sprintf(" (%s)", description)
 			}
 
-			argRow := container.NewHBox(
+			// 要素間のスペースを確保するため、BorderLayoutを使用
+			leftContent := container.NewHBox(
 				widget.NewLabel(labelText),
 				typeSelect,
-				valueEntry,
-				removeBtn,
+			)
+
+			argRow := container.NewBorder(
+				nil, nil, // top, bottom
+				leftContent, removeBtn, // left, right
+				valueEntry, // center
 			)
 			argumentsContainer.Add(argRow)
 		}
@@ -437,10 +449,13 @@ func main() {
 	// Senderウィンドウ
 	senderWin := a.NewWindow(config.Sender.Window.Title)
 
+	// Send History の高さをウィンドウ高さの比率で計算（約16.7%）
+	historyHeight := float32(config.Sender.Window.Height) * 0.167
+
 	// 送信履歴（簡易版）
 	historyLabel := widget.NewLabel("Send history will be displayed here")
 	historyScroll := container.NewScroll(historyLabel)
-	historyScroll.SetMinSize(fyne.NewSize(0, 150))
+	historyScroll.SetMinSize(fyne.NewSize(0, historyHeight))
 
 	// 送信履歴を更新する関数
 	updateSendHistory := func(msg string) {
