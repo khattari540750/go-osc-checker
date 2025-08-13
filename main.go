@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"strconv"
@@ -96,7 +95,7 @@ func LoadSettings(filename string) (*Settings, error) {
 	}
 
 	// ファイルを読み込み
-	data, err := ioutil.ReadFile(filename)
+	data, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +121,7 @@ func LoadConfig(filename string) (*AppConfig, error) {
 	}
 
 	// ファイルを読み込み
-	data, err := ioutil.ReadFile(filename)
+	data, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
