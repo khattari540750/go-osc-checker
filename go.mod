@@ -1,4 +1,4 @@
-module osc-checker
+module go-osc-checker
 
 go 1.24.6
 

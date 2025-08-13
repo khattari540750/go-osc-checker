@@ -34,11 +34,11 @@ ehthumbs.db
 Thumbs.db
 
 # Application specific
-osc-checker
-osc-checker.exe
-osc-checker-windows.exe
-osc-checker-mac
-osc-checker-linux
+go-osc-checker
+go-osc-checker.exe
+go-osc-checker-windows.exe
+go-osc-checker-mac
+go-osc-checker-linux
 
 # Fyne specific
 *.app/

@@ -39,14 +39,14 @@ A professional OSC (Open Sound Control) sender and receiver application built wi
 ### Build from Source
 ```bash
 git clone <repository-url>
-cd osc-checker
+cd go-osc-checker
 go mod tidy
-go build -o osc-checker main.go
+go build -o go-osc-checker main.go
 ```
 
 ### Run
 ```bash
-./osc-checker
+./go-osc-checker
 ```
 
 **Note**: The application will automatically create default configuration files (`settings.yaml` and `config.yaml`) if they don't exist on first run.

@@ -474,7 +474,7 @@ func main() {
 		log.Fatalf("設定ファイル %s の読み込みに失敗しました: %v", settings.ConfigFile, err)
 	}
 
-	a := app.NewWithID("com.example.oscchecker")
+	a := app.NewWithID("com.example.gooscchecker")
 
 	// メッセージ管理用のスライス
 	var messages []OSCMessage
