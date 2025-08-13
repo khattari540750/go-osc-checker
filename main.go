@@ -18,6 +18,11 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// Settings settings.yamlの設定
+type Settings struct {
+	ConfigFile string `yaml:"config_file"`
+}
+
 // AppConfig アプリケーション全体の設定
 type AppConfig struct {
 	App      AppSettings      `yaml:"app"`
@@ -78,6 +83,32 @@ type OSCMessage struct {
 	Timestamp string
 	Address   string
 	Values    string
+}
+
+// LoadSettings settings.yamlを読み込む
+func LoadSettings(filename string) (*Settings, error) {
+	settings := &Settings{}
+
+	// ファイルが存在しない場合はデフォルト設定を作成
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		log.Printf("設定ファイル %s が見つかりません。デフォルト設定を使用します。", filename)
+		return &Settings{ConfigFile: "config.yaml"}, nil
+	}
+
+	// ファイルを読み込み
+	data, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	// YAMLをパース
+	err = yaml.Unmarshal(data, settings)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Printf("設定ファイル %s を読み込みました", filename)
+	return settings, nil
 }
 
 // LoadConfig 設定ファイルを読み込む
@@ -432,10 +463,16 @@ func createSenderSection(target SenderTarget, index int, updateHistory func(stri
 }
 
 func main() {
-	// 設定ファイルを読み込み
-	config, err := LoadConfig("config.yaml")
+	// settings.yamlを読み込み
+	settings, err := LoadSettings("settings.yaml")
 	if err != nil {
-		log.Fatalf("設定ファイルの読み込みに失敗しました: %v", err)
+		log.Fatalf("settings.yamlの読み込みに失敗しました: %v", err)
+	}
+
+	// settings.yamlで指定されたconfigファイルを読み込み
+	config, err := LoadConfig(settings.ConfigFile)
+	if err != nil {
+		log.Fatalf("設定ファイル %s の読み込みに失敗しました: %v", settings.ConfigFile, err)
 	}
 
 	a := app.NewWithID("com.example.oscchecker")

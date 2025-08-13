@@ -1,0 +1,30 @@
+# OSC Checker Configuration - Development
+app:
+  name: "OSC Checker (Dev)"
+  version: "1.0.0-dev"
+
+sender:
+  list:
+    - name: "Local Dev Test"
+      host: "127.0.0.1"
+      port: 8000
+      address: "/dev/test"
+      arguments:
+        - type: "int"
+          default_value: "123"
+          description: "Dev test integer"
+        - type: "string"
+          default_value: "development"
+          description: "Dev mode string"
+  window:
+    width: 800
+    height: 500
+    title: "OSC Sender (Development)"
+
+receiver:
+  default_port: 8000
+  window:
+    width: 900
+    height: 600
+    title: "OSC Receiver (Development)"
+  max_log_entries: 50

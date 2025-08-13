@@ -49,6 +49,87 @@ go build -o osc-checker main.go
 ./osc-checker
 ```
 
+**Note**: The application will automatically create default configuration files (`settings.yaml` and `config.yaml`) if they don't exist on first run.
+
+## Configuration
+
+OSC Checker uses a hierarchical configuration system for flexible environment management.
+
+### Configuration Files
+
+#### 📄 settings.yaml
+The main settings file that specifies which configuration file to use:
+
+```yaml
+# OSC Checker Settings
+config_file: "config.yaml"  # Specify the config file to use
+```
+
+#### 📄 config.yaml (Main Configuration)
+Contains all application settings including sender targets, window sizes, and receiver settings:
+
+```yaml
+app:
+  name: "OSC Checker"
+  version: "1.0.0"
+
+sender:
+  list:
+    - name: "Local Test"
+      host: "127.0.0.1"
+      port: 7000
+      address: "/test"
+      arguments:
+        - type: "int"
+          default_value: "42"
+          description: "Test integer value"
+  window:
+    width: 900
+    height: 600
+
+receiver:
+  default_port: 7000
+  window:
+    width: 1000
+    height: 700
+  max_log_entries: 100
+```
+
+### Environment-Specific Configurations
+
+You can create multiple configuration files for different environments:
+
+- `config.yaml` - Default/Production configuration
+- `config-development.yaml` - Development environment
+- `config-testing.yaml` - Testing environment
+- `config-production.yaml` - Production environment
+
+**To switch environments**, simply modify `settings.yaml`:
+
+```yaml
+# For development
+config_file: "config-development.yaml"
+
+# For production  
+config_file: "config-production.yaml"
+```
+
+### Configuration Parameters
+
+#### Sender Configuration
+- **targets**: List of OSC destinations with host, port, and default arguments
+- **window**: UI window dimensions and title
+- **arguments**: Pre-configured argument types with default values
+
+#### Receiver Configuration
+- **default_port**: Default listening port for OSC messages
+- **window**: UI window dimensions and title  
+- **max_log_entries**: Maximum number of log entries to retain
+
+#### UI Scaling
+- Send History height is automatically calculated as 16.7% of window height
+- All UI elements scale proportionally with window size
+
 ## Usage
 
 ### Starting the Application
@@ -109,59 +190,6 @@ The sender interface shows multiple configured targets from your config.yaml fil
    - Click "Stop" to halt message reception
    - Status will change to "Stopped" with a red indicator
 
-## Configuration
-
-The application uses a `config.yaml` file for multiple sender targets and default settings:
-
-```yaml
-app:
-  name: "OSC Checker"
-  version: "1.0.0"
-
-sender:
-  default_host: "127.0.0.1"
-  default_port: 7000
-  default_address: "/test"
-  window:
-    width: 900
-    height: 600
-    title: "OSC Sender"
-  list:
-    - name: "TestServer"
-      host: "127.0.0.1"
-      port: 7000
-      address: "/test"
-      arguments:
-        - type: "int"
-          default_value: "1"
-          description: "Test value"
-        - type: "float"
-          default_value: "1.5"
-          description: "Volume level"
-    - name: "LiveServer"
-      host: "192.168.1.100"
-      port: 8000
-      address: "/live/trigger"
-      arguments:
-        - type: "string"
-          default_value: "trigger"
-          description: "Command"
-
-receiver:
-  default_port: 7000
-  window:
-    width: 1000
-    height: 700
-    title: "OSC Receiver"
-  max_log_entries: 1000
-```
-
-### Configuration Features
-- **Multiple Targets**: Define multiple sender configurations
-- **Preset Arguments**: Pre-configure arguments with default values and descriptions
-- **Flexible Setup**: Each target can have different hosts, ports, and addresses
-- **UI Customization**: Window sizes and titles are configurable
-
 ## Use Cases
 
 ### Development & Testing
@@ -184,10 +212,17 @@ receiver:
 
 - **Framework**: Fyne v2 (Cross-platform GUI)
 - **OSC Library**: github.com/hypebeast/go-osc
-- **Configuration**: YAML-based configuration with multiple sender support
+- **Configuration**: Hierarchical YAML-based configuration system
+  - `settings.yaml`: Meta-configuration for environment switching
+  - `config.yaml`: Main application configuration
+  - Support for multiple environment-specific config files
 - **Platform Support**: Windows, macOS, Linux
 - **Language**: Go 1.19+
-- **UI Features**: Large buttons, intuitive symbols (＋/✕), streamlined layout
+- **UI Features**: 
+  - Large buttons with intuitive symbols (＋/✕)
+  - Streamlined layout with border-based positioning
+  - Proportional UI scaling (Send History: 16.7% of window height)
+  - Dynamic argument forms with configurable widths
 
 ## Message Format
 
